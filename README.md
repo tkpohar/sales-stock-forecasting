@@ -4,7 +4,7 @@ It uses ARIMA modeling (pmdarima) to predict future trends.
 How to Run the App
 Option 1: Run Online (Streamlit Cloud)
 Simply click this link to open the app in your browser:
-[App Link Here](https://share.streamlit.io/your-username/sales-stock-forecasting/main/rossman_and_amazon.py)
+[App Link Here](https://sales-stock-forecasting-f84rji4p43qnasmg7jfe7r.streamlit.app/)
 _No installation required._
 Option 2: Run Locally
 1. Clone the repository:
