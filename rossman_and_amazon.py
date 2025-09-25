@@ -17,12 +17,18 @@ freq_option = st.selectbox("Select Frequency for Aggregation", ["Monthly", "Week
 freq_map = {"Monthly": "M", "Weekly": "W", "Daily": "D"}
 
 # Load default datasets safely
+
 def load_data(dataset):
     if dataset == "Rossmann Sales":
-        sales = pd.read_csv(
-            "/Users/tanvaipohare/AI_Predictive_Analytics/notebooks/rossmann_data.csv",
-            encoding="ISO-8859-1"
-        )
+        # Google Drive CSV loader
+        def read_drive_csv(file_id):
+            url = f"https://drive.google.com/uc?export=download&id={file_id}"
+            df = pd.read_csv(url, encoding="ISO-8859-1")
+            return df
+
+        file_id = "1nB5pP-WALTU2B1c2FjlQn23rj1RdTxug"
+        sales = read_drive_csv(file_id)
+        
         sales['InvoiceDate'] = pd.to_datetime(sales['InvoiceDate'])
         monthly_sales = sales.groupby(pd.Grouper(key='InvoiceDate', freq='M'))['Quantity'].sum()
         return monthly_sales
