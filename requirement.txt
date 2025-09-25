@@ -2,7 +2,7 @@ streamlit
 pandas
 matplotlib
 yfinance
-pmdarima==2.0.4
-numpy<2
+pmdarima
+numpy
 scikit-learn
 statsmodels
