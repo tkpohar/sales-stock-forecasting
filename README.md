@@ -34,4 +34,3 @@ Features
   - Forecasted data (CSV)
   - ARIMA summary (TXT)
   - Forecast chart (PNG)
-<img width="432" height="643" alt="image" src="https://github.com/user-attachments/assets/5f077eb8-9acc-4f73-b042-03c6a5ccda4c" />
