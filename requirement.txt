@@ -1,5 +1,8 @@
 streamlit
 pandas
 matplotlib
-pmdarima
 yfinance
+pmdarima==2.0.4
+numpy<2
+scikit-learn
+statsmodels
