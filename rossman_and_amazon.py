@@ -9,6 +9,7 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 from pmdarima.arima.utils import ndiffs, nsdiffs
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import warnings
+import plotly.graph_objects as go
 
 warnings.filterwarnings("ignore")
 
@@ -192,16 +193,45 @@ conf_int.index = forecast_index
 combined_df = pd.concat([data_series.rename("Historical"), forecast_series.rename("Forecast")], axis=1)
 
 # ------------------ Plot (Matplotlib) ------------------
-plt.figure(figsize=(10,5))
-plt.plot(data_series, label="Historical", linewidth=2)
-plt.plot(forecast_series, label="Forecast", color='red', linestyle="--")
-plt.fill_between(conf_int.index, conf_int.iloc[:,0], conf_int.iloc[:,1], color='red', alpha=0.2)
-plt.title("Forecast with Realistic Fluctuations", fontsize=14)
-plt.xlabel("Date")
-plt.ylabel("Value")
-plt.legend()
-plt.grid(True, linestyle="--", alpha=0.6)
-st.pyplot(plt)
+fig = go.Figure()
+
+# Historical data
+fig.add_trace(go.Scatter(
+    x=data_series.index,
+    y=data_series,
+    mode='lines',
+    name='Historical',
+    line=dict(color='blue', width=2)
+))
+
+# Forecast
+fig.add_trace(go.Scatter(
+    x=forecast_series.index,
+    y=forecast_series,
+    mode='lines',
+    name='Forecast',
+    line=dict(color='red', dash='dash')
+))
+
+# Confidence interval
+fig.add_trace(go.Scatter(
+    x=conf_int.index.tolist() + conf_int.index[::-1].tolist(),
+    y=conf_int.iloc[:,0].tolist() + conf_int.iloc[:,1][::-1].tolist(),
+    fill='toself',
+    fillcolor='rgba(255,0,0,0.2)',
+    line=dict(color='rgba(255,255,255,0)'),
+    hoverinfo="skip",
+    showlegend=False
+))
+
+fig.update_layout(
+    title='Forecast with Realistic Fluctuations',
+    xaxis_title='Date',
+    yaxis_title='Value',
+    template='plotly_white'
+)
+
+st.plotly_chart(fig, use_container_width=True)
 
 # ------------------ Download Buttons ------------------
 st.download_button("Download Forecast CSV", combined_df.to_csv().encode("utf-8"), "forecast.csv")
@@ -228,4 +258,3 @@ if evaluate_split and test is not None:
         st.write(f"MAE: {mae:.2f}, RMSE: {rmse:.2f}")
     else:
         st.warning("No overlapping points between forecast and test for evaluation.")
-
