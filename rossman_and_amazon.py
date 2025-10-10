@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 import io
 from statsmodels.tsa.stattools import acf
 from statsmodels.tsa.statespace.sarimax import SARIMAX
-from sklearn.metrics import mean_absolute_error, mean_squared_error
 from pmdarima.arima.utils import ndiffs, nsdiffs
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -105,14 +105,25 @@ else:
     train = ts_series
     test = None
 
+# ------------------ Minimum Data Check ------------------
+MIN_POINTS_FOR_SARIMA = 12
+if len(train) < MIN_POINTS_FOR_SARIMA:
+    st.warning(f"Dataset too small ({len(train)} points) for SARIMA. Using simple trend forecast.")
+    last_value = train.iloc[-1]
+    forecast_index = pd.date_range(
+        start=train.index[-1] + pd.tseries.frequencies.to_offset(freq_map[freq_option]),
+        periods=forecast_periods,
+        freq=freq_map[freq_option].replace("M", "ME")
+    )
+    forecast_series = pd.Series([last_value] * forecast_periods, index=forecast_index)
+    combined_df = pd.concat([data_series.rename("Historical"), forecast_series.rename("Forecast")], axis=1)
+    st.line_chart(combined_df)
+    st.download_button("Download Forecast CSV", combined_df.to_csv().encode("utf-8"), "forecast.csv")
+    st.stop()
+
 # ------------------ Automatic Differencing ------------------
 d = ndiffs(train)
-
-# Only apply seasonal differencing if m > 1
-if seasonal and detected_m > 1:
-    D = nsdiffs(train, m=detected_m)
-else:
-    D = 0
+D = nsdiffs(train, m=detected_m) if seasonal and detected_m > 1 else 0
 
 # ------------------ Fit SARIMA ------------------
 if D > 0:
