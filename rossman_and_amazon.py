@@ -213,18 +213,16 @@ st.download_button("Download Forecast Chart PNG", buf, "forecast.png")
 
 # ------------------ Evaluation Metrics ------------------
 if evaluate_split and test is not None:
-    # Align forecast and test, drop NaNs
-    preds = forecast_series[:len(test)].copy()
+    # Align forecast to test index
+    preds = forecast_series.reindex(test.index)
     combined_eval = pd.concat([test, preds], axis=1).dropna()
     if combined_eval.shape[0] > 0:
         test_clean = combined_eval.iloc[:,0]
         preds_clean = combined_eval.iloc[:,1]
         if log_transform:
-            # invert log on test values (we added +shift earlier if needed, then took log)
-            # we approximated inverse for predictions already
             test_clean = np.exp(test_clean) - 1
         mae = mean_absolute_error(test_clean, preds_clean)
         rmse = np.sqrt(mean_squared_error(test_clean, preds_clean))
         st.write(f"MAE: {mae:.2f}, RMSE: {rmse:.2f}")
     else:
-        st.warning("No valid aligned points for evaluation after removing NaNs.")
+        st.warning("No overlapping points between forecast and test for evaluation.")
