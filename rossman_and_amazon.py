@@ -9,37 +9,16 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 st.title("Stock / Custom Data Forecasting with ARIMA (Cloud-Friendly)")
 
-# Dataset selection
-dataset_option = st.selectbox("Select Dataset", ["Amazon Stock", "Custom CSV (Upload)"])
-
-# CSV upload
-uploaded_file = st.file_uploader("Upload your CSV file (Date + Value columns)", type=["csv"])
-
 # Frequency selection
 freq_option = st.selectbox("Select Frequency for Aggregation", ["Monthly", "Weekly", "Daily"])
 freq_map = {"Monthly": "M", "Weekly": "W", "Daily": "D"}
 
-# Detect seasonality automatically
-def detect_seasonality(ts_series, max_lag=36):
-    ts_series = ts_series.dropna()
-    acf_vals = acf(ts_series, nlags=max_lag, fft=False)
-    acf_vals[0] = 0
-    seasonal_period = int(np.argmax(acf_vals))
-    return max(seasonal_period, 1)
+# CSV upload
+uploaded_file = st.file_uploader("Upload your CSV file (Date + Value columns)", type=["csv"])
 
 # Load data
 def load_data():
-    if dataset_option == "Amazon Stock":
-        import yfinance as yf
-        amazon_data = yf.download('AMZN', start='2015-01-01', end='2025-01-01', interval='1mo')
-        if amazon_data.empty or 'Close' not in amazon_data.columns:
-            st.warning("Amazon stock data could not be fetched.")
-            return pd.Series(dtype=float)
-        close_col = 'Adj Close' if 'Adj Close' in amazon_data.columns else 'Close'
-        amazon_close = amazon_data[close_col].ffill().dropna()
-        amazon_close.index = pd.to_datetime(amazon_close.index)
-        return amazon_close.resample(freq_map[freq_option]).last()
-    elif uploaded_file is not None:
+    if uploaded_file is not None:
         try:
             user_data = pd.read_csv(uploaded_file)
             date_cols = user_data.select_dtypes(include=['object', 'datetime']).columns.tolist()
@@ -54,17 +33,34 @@ def load_data():
             if user_data.empty:
                 st.warning("No valid data after parsing dates.")
                 return pd.Series(dtype=float)
-            return user_data.groupby(pd.Grouper(key=date_col, freq=freq_map[freq_option]))[value_col].sum()
+            grouped = user_data.groupby(pd.Grouper(key=date_col, freq=freq_map[freq_option]))[value_col].sum()
+            return grouped
         except Exception as e:
             st.error(f"Error reading CSV: {e}")
             return pd.Series(dtype=float)
     else:
-        st.info("Please upload a CSV file to use the forecasting.")
-        return pd.Series(dtype=float)
+        # Default: Amazon Stock
+        import yfinance as yf
+        amazon_data = yf.download('AMZN', start='2015-01-01', end='2025-01-01', interval='1mo')
+        if amazon_data.empty or 'Close' not in amazon_data.columns:
+            st.warning("Amazon stock data could not be fetched.")
+            return pd.Series(dtype=float)
+        close_col = 'Adj Close' if 'Adj Close' in amazon_data.columns else 'Close'
+        amazon_close = amazon_data[close_col].ffill().dropna()
+        amazon_close.index = pd.to_datetime(amazon_close.index)
+        return amazon_close.resample(freq_map[freq_option]).last()
 
 data_series = load_data()
 if data_series.empty:
     st.stop()
+
+# Ensure Series
+if isinstance(data_series, pd.DataFrame):
+    if data_series.shape[1] == 1:
+        data_series = data_series.squeeze()
+    else:
+        st.error("Uploaded CSV has multiple numeric columns. Please select only one value column.")
+        st.stop()
 
 # Interactive seasonality and noise sliders
 st.subheader("Adjust Seasonality & Noise")
@@ -75,6 +71,14 @@ seasonal_component = amplitude * np.sin(np.linspace(0, 6 * np.pi, n))
 noise_component = np.random.normal(0, noise_level, n)
 adjusted_series = data_series + seasonal_component + noise_component
 st.line_chart(adjusted_series)
+
+# Detect seasonality automatically
+def detect_seasonality(ts_series, max_lag=36):
+    ts_series = ts_series.dropna()
+    acf_vals = acf(ts_series, nlags=max_lag, fft=False)
+    acf_vals[0] = 0
+    seasonal_period = int(np.argmax(acf_vals))
+    return max(seasonal_period, 1)
 
 # ARIMA options
 seasonal = st.checkbox("Use Seasonal ARIMA", value=True)
