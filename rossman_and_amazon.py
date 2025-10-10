@@ -107,16 +107,29 @@ else:
 
 # ------------------ Automatic Differencing ------------------
 d = ndiffs(train)
-D = nsdiffs(train, m=detected_m) if seasonal else 0
+
+# Only apply seasonal differencing if m > 1
+if seasonal and detected_m > 1:
+    D = nsdiffs(train, m=detected_m)
+else:
+    D = 0
 
 # ------------------ Fit SARIMA ------------------
-sarima_model = SARIMAX(
-    train,
-    order=(1, d, 1),
-    seasonal_order=(1, D, 1, detected_m) if seasonal else (0,0,0,0),
-    enforce_stationarity=False,
-    enforce_invertibility=False
-).fit(disp=False)
+if D > 0:
+    sarima_model = SARIMAX(
+        train,
+        order=(1, d, 1),
+        seasonal_order=(1, D, 1, detected_m),
+        enforce_stationarity=False,
+        enforce_invertibility=False
+    ).fit(disp=False)
+else:
+    sarima_model = SARIMAX(
+        train,
+        order=(1, d, 1),
+        enforce_stationarity=False,
+        enforce_invertibility=False
+    ).fit(disp=False)
 
 # ------------------ Forecast ------------------
 forecast_result = sarima_model.get_forecast(steps=forecast_periods)
