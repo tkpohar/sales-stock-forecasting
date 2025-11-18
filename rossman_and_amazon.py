@@ -13,7 +13,7 @@ import plotly.graph_objects as go
 
 warnings.filterwarnings("ignore")
 
-st.title("📈 Stock / Custom Data Forecasting with ARIMA (Cloud-Friendly)")
+st.title("Stock / Custom Data Forecasting with ARIMA (Cloud-Friendly)")
 
 # ------------------ Frequency Selection ------------------
 freq_option = st.selectbox(
