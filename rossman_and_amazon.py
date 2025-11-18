@@ -244,7 +244,7 @@ if "conf_int" in locals():
     ))
 
 fig.update_layout(
-    title="📊 Forecast with Interactive Zoom",
+    title="Forecast with Interactive Zoom",
     xaxis_title="Date",
     yaxis_title="Value",
     template="plotly_white"
